@@ -17,36 +17,45 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class TokenManager {
-   public static final long TOKEN_VALIDITY = 10 * 60 * 60; 
+   public static final long TOKEN_VALIDITY = 10 * 60 * 60;
 
-   @Value("${secret}") 
+   @Value("${secret}")
    private String jwtSecret;
 
-   public String generateJwtToken(UserDetails userDetails) { 
-      Map<String, Object> claims = new HashMap<>(); 
+   public String generateJwtToken(UserDetails userDetails) {
+      Map<String, Object> claims = new HashMap<>();
       return Jwts
-         .builder()
-         .setClaims(claims)
-         .setSubject(userDetails.getUsername()) 
-         .setIssuedAt(new Date(System.currentTimeMillis()))
-         .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 1000))
-         .signWith(getKey(), SignatureAlgorithm.HS256)
-         .compact();
+            .builder()
+            .setClaims(claims)
+            .setSubject(userDetails.getUsername())
+            .setIssuedAt(new Date(System.currentTimeMillis()))
+            .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY * 1000))
+            .signWith(getKey(), SignatureAlgorithm.HS256)
+            .compact();
    }
-   
+
    public Boolean validateJwtToken(String token, UserDetails userDetails) {
       final Claims claims = Jwts
-         .parserBuilder()
-         .setSigningKey(getKey())
-         .build()
-         .parseClaimsJws(token).getBody();
+            .parserBuilder()
+            .setSigningKey(getKey())
+            .build()
+            .parseClaimsJws(token).getBody();
       final String username = claims.getSubject();
       Boolean isTokenExpired = claims.getExpiration().before(new Date());
       return (username.equals(userDetails.getUsername())) && !isTokenExpired;
    }
-   
+
+   public String getUsernameFromToken(String token) {
+      final Claims claims = Jwts
+            .parserBuilder()
+            .setSigningKey(getKey())
+            .build()
+            .parseClaimsJws(token).getBody();
+      return claims.getSubject();
+   }
+
    private Key getKey() {
-      byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);		
+      byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
       Key key = Keys.hmacShaKeyFor(keyBytes);
       return key;
    }
